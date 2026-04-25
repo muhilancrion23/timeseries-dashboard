@@ -69,8 +69,8 @@
 <main>
   <p class="page-title">Select a section to view parameters</p>
   <div class="sections-grid">
-    {% set icons     = {'PT': '🧪', 'ED': '⚡', 'Oven': '🔥'} %}
-    {% set subtitles = {'PT': 'Pre-Treatment', 'ED': 'Electro Deposition', 'Oven': 'Curing Station'} %}
+    {% set icons     = {'PT': '', 'ED': '', 'Oven': ''} %}
+    {% set subtitles = {'PT': 'Pre-Treatment', 'ED': 'Electro Deposition', 'Oven': 'Oven Station'} %}
     {% for section in sections %}
     <div class="section-card" onclick="openModal('{{ section }}')">
       <div class="card-icon">{{ icons[section] }}</div>
