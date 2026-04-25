@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Time Series Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f5f7fa;
+      --white: #ffffff;
+      --border: #e2e8f0;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --accent-pt:   #2563eb;
+      --accent-ed:   #7c3aed;
+      --accent-oven: #ea580c;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: var(--bg); color: var(--text); font-family: "Inter", sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
+
+    header { background: var(--white); border-bottom: 1px solid var(--border); padding: 16px 40px; display: flex; align-items: center; gap: 10px; }
+    header .logo-icon { font-size: 22px; }
+    header h1 { font-size: 18px; font-weight: 700; }
+    header .tagline { font-size: 13px; color: var(--text-muted); }
+
+    main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 24px; }
+    .page-title { font-size: 14px; color: var(--text-muted); margin-bottom: 32px; }
+
+    .sections-grid { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; max-width: 860px; }
+
+    .section-card { background: var(--white); border: 1px solid var(--border); border-radius: 14px; padding: 32px 36px; min-width: 220px; text-align: center; cursor: pointer; transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s; position: relative; }
+    .section-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.09); transform: translateY(-3px); border-color: var(--card-accent); }
+    .section-card:nth-child(1) { --card-accent: var(--accent-pt); }
+    .section-card:nth-child(2) { --card-accent: var(--accent-ed); }
+    .section-card:nth-child(3) { --card-accent: var(--accent-oven); }
+    .section-card::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: var(--card-accent); border-radius: 14px 14px 0 0; }
+
+    .card-icon { font-size: 30px; margin-bottom: 12px; }
+    .card-title { font-size: 22px; font-weight: 700; color: var(--card-accent); margin-bottom: 4px; }
+    .card-subtitle { font-size: 12px; color: var(--text-muted); margin-bottom: 16px; }
+    .card-folders { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 20px; }
+    .folder-tag { font-size: 11px; padding: 3px 10px; border-radius: 20px; background: var(--bg); border: 1px solid var(--border); color: var(--text-muted); }
+    .card-btn { display: inline-block; font-size: 13px; font-weight: 600; color: var(--card-accent); border: 1.5px solid var(--card-accent); border-radius: 8px; padding: 8px 20px; transition: background 0.15s, color 0.15s; }
+    .section-card:hover .card-btn { background: var(--card-accent); color: #fff; }
+
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 100; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--white); border-radius: 16px; padding: 32px; width: 90%; max-width: 400px; position: relative; box-shadow: 0 20px 60px rgba(0,0,0,0.12); }
+    .modal h2 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+    .modal .modal-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
+    .close-btn { position: absolute; top: 14px; right: 14px; width: 28px; height: 28px; border-radius: 50%; background: var(--bg); border: 1px solid var(--border); color: var(--text-muted); font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .close-btn:hover { background: var(--border); }
+    .subfolder-list { display: flex; flex-direction: column; gap: 8px; }
+    .subfolder-link { display: flex; align-items: center; justify-content: space-between; padding: 13px 16px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; color: var(--text); text-decoration: none; font-size: 14px; font-weight: 500; transition: border-color 0.15s, background 0.15s; }
+    .subfolder-link:hover { background: var(--white); border-color: var(--active-accent); color: var(--active-accent); }
+
+    footer { text-align: center; padding: 14px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); background: var(--white); }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo-icon">📈</div>
+  <h1>Time Series Dashboard</h1>
+  <span class="tagline">&nbsp;— Actual vs Forecasted</span>
+</header>
+
+<main>
+  <p class="page-title">Select a section to view parameters</p>
+  <div class="sections-grid">
+    {% set icons     = {'PT': '🧪', 'ED': '⚡', 'Oven': '🔥'} %}
+    {% set subtitles = {'PT': 'Pre-Treatment', 'ED': 'Electro Deposition', 'Oven': 'Curing Station'} %}
+    {% for section in sections %}
+    <div class="section-card" onclick="openModal('{{ section }}')">
+      <div class="card-icon">{{ icons[section] }}</div>
+      <div class="card-title">{{ section }}</div>
+      <div class="card-subtitle">{{ subtitles[section] }}</div>
+      <div class="card-folders">
+        {% for sf in section_data[section] %}
+          <span class="folder-tag">{{ sf.replace('_',' ') }}</span>
+        {% endfor %}
+        {% if not section_data[section] %}
+          <span class="folder-tag">No data yet</span>
+        {% endif %}
+      </div>
+      <div class="card-btn">Open &rarr;</div>
+    </div>
+    {% endfor %}
+  </div>
+</main>
+
+<footer>Time Series Dashboard &nbsp;&middot;&nbsp; {{ sections|length }} Sections</footer>
+
+{% set colors = {'PT': '#2563eb', 'ED': '#7c3aed', 'Oven': '#ea580c'} %}
+{% for section in sections %}
+<div class="modal-overlay" id="modal-{{ section }}" style="--active-accent: {{ colors[section] }}">
+  <div class="modal">
+    <button class="close-btn" onclick="closeModal('{{ section }}')">&#x2715;</button>
+    <h2 style="color: {{ colors[section] }}">{{ section }}</h2>
+    <p class="modal-sub">Select a subfolder</p>
+    <div class="subfolder-list">
+      {% for sf in section_data[section] %}
+      <a class="subfolder-link" href="/dashboard/{{ section }}/{{ sf }}">
+        &#128193; {{ sf.replace('_', ' ') }} <span>&rarr;</span>
+      </a>
+      {% endfor %}
+      {% if not section_data[section] %}
+      <p style="font-size:13px;color:var(--text-muted);">No subfolders found.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+<script>
+  function openModal(s)  { document.getElementById('modal-' + s).classList.add('open'); }
+  function closeModal(s) { document.getElementById('modal-' + s).classList.remove('open'); }
+  document.querySelectorAll('.modal-overlay').forEach(el => {
+    el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+  });
+</script>
+</body>
+</html>
